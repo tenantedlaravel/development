@@ -5,6 +5,7 @@ namespace Tenanted\Core\Providers;
 
 use Illuminate\Database\Eloquent\Model;
 use Tenanted\Core\Contracts\Tenant;
+use Tenanted\Core\Support\BaseTenantProvider;
 
 /**
  * Eloquent Tenant Provider
@@ -37,6 +38,8 @@ class EloquentTenantProvider extends BaseTenantProvider
      * Get the model class
      *
      * @return class-string<\Illuminate\Database\Eloquent\Model&\Tenanted\Core\Contracts\Tenant>
+     *
+     * @noinspection PhpUnused
      */
     public function getModelClass(): string
     {
