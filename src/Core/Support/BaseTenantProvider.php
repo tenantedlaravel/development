@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Tenanted\Core\Providers;
+namespace Tenanted\Core\Support;
 
 use Tenanted\Core\Contracts\TenantProvider;
 
