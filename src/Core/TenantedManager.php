@@ -8,7 +8,9 @@ use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Str;
 use Tenanted\Core\Contracts\TenantProvider;
 use Tenanted\Core\Exceptions\TenantProviderException;
+use Tenanted\Core\Providers\DatabaseTenantProvider;
 use Tenanted\Core\Providers\EloquentTenantProvider;
+use Tenanted\Core\Support\GenericTenant;
 
 final class TenantedManager
 {
@@ -199,5 +201,31 @@ final class TenantedManager
         }
 
         return new EloquentTenantProvider($name, $config['model']);
+    }
+
+    /**
+     * Create a new instance of the database tenant provider
+     *
+     * @param array<string, mixed> $config
+     * @param string               $name
+     *
+     * @return \Tenanted\Core\Providers\DatabaseTenantProvider
+     *
+     * @throws \Tenanted\Core\Exceptions\TenantProviderException
+     */
+    private function createDatabaseProvider(array $config, string $name): DatabaseTenantProvider
+    {
+        if (! isset($config['table'])) {
+            throw TenantProviderException::missingConfig($name, 'table');
+        }
+
+        return new DatabaseTenantProvider(
+            $name,
+            $this->app['db']->connection($config['connection'] ?? null),
+            $config['table'],
+            $config['identifier'] ?? 'identifier',
+            $config['key'] ?? 'id',
+            $config['entity'] ?? GenericTenant::class
+        );
     }
 }
