@@ -47,10 +47,20 @@ class IdentifyTenant
         $tenancy  = $this->manager->tenancy($tenancyName);
         $resolver = $this->manager->resolver($resolverName);
 
+        // If there's no route, there's a good chance that we haven't managed to
+        // resolve the tenant identifier, so let's fix that
+        if ($request->route() === null) {
+            // Here we'll manually force an identity resolution
+            $tenancy->identify($resolver->resolve($request, $tenancy), $resolver->name());
+        }
+
+        // If there's no tenant, it's exception time
         if (! $tenancy->check()) {
             throw TenantNotFoundException::missing($tenancy->name(), $resolver->name());
         }
 
+        // If the current tenant wasn't identified, or wasn't identified by the
+        // expected resolver, it's also exception time
         if ($tenancy->wasIdentified() && $tenancy->identifiedBy() !== $resolver->name()) {
             throw TenantNotFoundException::invalidResolver($tenancy->name(), $resolver->name());
         }

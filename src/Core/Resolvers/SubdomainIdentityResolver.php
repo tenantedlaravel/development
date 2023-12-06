@@ -9,6 +9,7 @@ use Illuminate\Routing\Router;
 use Illuminate\Routing\RouteRegistrar;
 use Illuminate\Support\Str;
 use Tenanted\Core\Contracts\Tenancy;
+use Tenanted\Core\Http\FallbackHandler;
 use Tenanted\Core\Support\ParameterIdentityResolver;
 
 /**
@@ -92,8 +93,8 @@ class SubdomainIdentityResolver extends ParameterIdentityResolver
         // need to handle that
         $host = $request->getHost();
 
-        if (str_ends_with($host, '.'. $this->domain())) {
-            return Str::before($host, '.'.$this->domain);
+        if (str_ends_with($host, '.' . $this->domain())) {
+            return Str::before($host, '.' . $this->domain);
         }
 
         return false;
@@ -108,8 +109,12 @@ class SubdomainIdentityResolver extends ParameterIdentityResolver
      */
     public function routes(Router $router, string $tenancy, array|Closure|string|null $routes = null): RouteRegistrar
     {
-        return parent::routes($router, $tenancy, $routes)
+        return parent::routes($router, $tenancy)
                      ->domain('{' . $this->getParameterName($tenancy) . '}.' . $this->domain())
+                     ->group(function (Router $router) use ($routes) {
+                         $router->group([], $routes);
+                         $router->fallback(FallbackHandler::class);
+                     })
                      ->where([$this->getParameterName($tenancy) => '.*',]);
     }
 }

@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Routing\RouteRegistrar;
 use Tenanted\Core\Contracts\Tenancy;
+use Tenanted\Core\Http\FallbackHandler;
 use Tenanted\Core\Support\ParameterIdentityResolver;
 
 /**
@@ -62,7 +63,11 @@ class PathIdentityResolver extends ParameterIdentityResolver
      */
     public function routes(Router $router, string $tenancy, array|Closure|string|null $routes = null): RouteRegistrar
     {
-        return parent::routes($router, $tenancy, $routes)
-                     ->prefix('{' . $this->getParameterName($tenancy) . '}');
+        return parent::routes($router, $tenancy)
+                     ->prefix('{' . $this->getParameterName($tenancy) . '}')
+                     ->group(function (Router $router) use($routes) {
+                         $router->group([], $routes);
+                         $router->fallback(FallbackHandler::class);
+                     });
     }
 }
