@@ -48,6 +48,8 @@ class PathIdentityResolver extends ParameterIdentityResolver
             return parent::resolve($request, $tenancy);
         }
 
+        // If there's no route, we're dealing with a route-less request, so we
+        // need to handle that
         return $request->segment($this->segment);
     }
 

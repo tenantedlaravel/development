@@ -7,6 +7,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Routing\RouteRegistrar;
+use Illuminate\Support\Str;
 use Tenanted\Core\Contracts\Tenancy;
 use Tenanted\Core\Support\ParameterIdentityResolver;
 
@@ -73,17 +74,29 @@ class SubdomainIdentityResolver extends ParameterIdentityResolver
      */
     public function resolve(Request $request, Tenancy $tenancy): string|null|false
     {
-        $identifier = parent::resolve($request, $tenancy);
+        if ($request->route() !== null) {
+            $identifier = parent::resolve($request, $tenancy);
 
-        if ($identifier !== null && $identifier !== false) {
-            $exclude = self::$exclusionPredicate;
+            if ($identifier !== null && $identifier !== false) {
+                $exclude = self::$exclusionPredicate;
 
-            if ($exclude !== null && $exclude($identifier, $request->getHost())) {
-                return false;
+                if ($exclude !== null && $exclude($identifier, $request->getHost())) {
+                    return false;
+                }
             }
+
+            return $identifier;
         }
 
-        return $identifier;
+        // If there's no route, we're dealing with a route-less request, so we
+        // need to handle that
+        $host = $request->getHost();
+
+        if (str_ends_with($host, '.'. $this->domain())) {
+            return Str::before($host, '.'.$this->domain);
+        }
+
+        return false;
     }
 
     /**
