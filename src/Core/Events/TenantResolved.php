@@ -4,12 +4,13 @@ declare(strict_types=1);
 namespace Tenanted\Core\Events;
 
 use Illuminate\Foundation\Events\Dispatchable;
+use Tenanted\Core\Contracts\Tenancy;
 use Tenanted\Core\Contracts\Tenant;
 
 /**
- * @method static array dispatch(Tenant $tenant)
- * @method static array dispatchIf(bool $boolean, Tenant $tenant)
- * @method static array dispatchUnless(bool $boolean, Tenant $tenant)
+ * @method static array dispatch(Tenant $tenant, Tenancy $tenancy)
+ * @method static array dispatchIf(bool $boolean, Tenant $tenant, Tenancy $tenancy)
+ * @method static array dispatchUnless(bool $boolean, Tenant $tenant, Tenancy $tenancy)
  */
 abstract class TenantResolved
 {
@@ -20,13 +21,24 @@ abstract class TenantResolved
      */
     private Tenant $tenant;
 
-    public function __construct(Tenant $tenant)
+    /**
+     * @var \Tenanted\Core\Contracts\Tenancy
+     */
+    private Tenancy $tenancy;
+
+    public function __construct(Tenant $tenant, Tenancy $tenancy)
     {
         $this->tenant = $tenant;
+        $this->tenancy = $tenancy;
     }
 
     public function tenant(): Tenant
     {
         return $this->tenant;
+    }
+
+    public function tenancy(): Tenancy
+    {
+        return $this->tenancy;
     }
 }

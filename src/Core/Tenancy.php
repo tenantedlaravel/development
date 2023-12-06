@@ -95,7 +95,7 @@ final class Tenancy implements Contracts\Tenancy
         $tenant = $this->provider()->retrieveByIdentifier($identifier);
 
         if ($tenant !== null) {
-            TenantIdentified::dispatch($tenant, $resolver);
+            TenantIdentified::dispatch($tenant, $this, $resolver);
 
             if ($this->setTenant($tenant)) {
                 $this->identifiedBy = $resolver;
@@ -116,7 +116,7 @@ final class Tenancy implements Contracts\Tenancy
         $tenant = $this->provider()->retrieveByKey($key);
 
         if ($tenant !== null) {
-            TenantLoaded::dispatch($tenant);
+            TenantLoaded::dispatch($tenant, $this);
 
             if ($this->setTenant($tenant)) {
                 $this->identifiedBy = null;
@@ -135,7 +135,7 @@ final class Tenancy implements Contracts\Tenancy
     public function setTenant(?Tenant $tenant): bool
     {
         if ($this->tenant !== $tenant) {
-            TenantChanged::dispatch($this->tenant, $tenant);
+            TenantChanged::dispatch($this, $this->tenant, $tenant);
 
             $this->tenant = $tenant;
 
