@@ -6,11 +6,14 @@ namespace Tenanted\Core;
 use Illuminate\Config\Repository;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Str;
+use Tenanted\Core\Contracts\IdentityResolver;
 use Tenanted\Core\Contracts\TenantProvider;
+use Tenanted\Core\Exceptions\IdentityResolverException;
 use Tenanted\Core\Exceptions\TenancyException;
 use Tenanted\Core\Exceptions\TenantProviderException;
 use Tenanted\Core\Providers\DatabaseTenantProvider;
 use Tenanted\Core\Providers\EloquentTenantProvider;
+use Tenanted\Core\Resolvers\PathIdentityResolver;
 use Tenanted\Core\Support\GenericTenant;
 
 final class TenantedManager
@@ -28,6 +31,13 @@ final class TenantedManager
      * @var array<string, callable(array<string, mixed>, string): \Tenanted\Core\Contracts\Tenancy
      */
     private static array $customTenancyCreators = [];
+
+    /**
+     * Custom identity resolver creators
+     *
+     * @var array<string, callable(array<string, mixed>, string): \Tenanted\Core\Contracts\IdentityResolver
+     */
+    private static array $customResolverCreators = [];
 
     /**
      * Register a custom tenant provider creator
@@ -53,6 +63,19 @@ final class TenantedManager
     public static function registerTenancy(string $name, callable $creator): void
     {
         self::$customTenancyCreators[$name] = $creator;
+    }
+
+    /**
+     * Register a custom identity resolver creator
+     *
+     * @param string                                                                            $name
+     * @param callable(array<string, mixed>, string): \Tenanted\Core\Contracts\IdentityResolver $creator
+     *
+     * @return void
+     */
+    public static function registerResolver(string $name, callable $creator): void
+    {
+        self::$customResolverCreators[$name] = $creator;
     }
 
     /**
@@ -82,6 +105,13 @@ final class TenantedManager
      * @var array<string, \Tenanted\Core\Contracts\Tenancy>
      */
     private array $tenancies = [];
+
+    /**
+     * Identity resolver instances
+     *
+     * @var array<string, \Tenanted\Core\Contracts\IdentityResolver>
+     */
+    private array $resolvers = [];
 
     /**
      * Create a new instance of the tenanted manager
@@ -194,7 +224,7 @@ final class TenantedManager
                 // There's no custom provider creator for the driver, so we'll
                 // see if it's a first party provider supported directly by
                 // this class
-                $method = 'create' . Str::ucfirst($name) . 'Provider';
+                $method = 'create' . Str::ucfirst($driver) . 'Provider';
 
                 if (method_exists($this, $method)) {
                     // A method exists to create this type of provider, so let's do so
@@ -310,7 +340,7 @@ final class TenantedManager
         }
 
         // Load the tenancy config
-        $config  = $this->getTenancyConfig($name);
+        $config = $this->getTenancyConfig($name);
 
         if (self::$customTenancyCreators[$name]) {
             // There's a tenancy creator for its name, so we'll use that to
@@ -344,5 +374,102 @@ final class TenantedManager
 
         // We were unable to create a tenancy, which is a problem
         throw TenancyException::unknown($name);
+    }
+
+    /**
+     * Get the default identity resolver name
+     *
+     * @return string
+     */
+    private function getDefaultResolverName(): string
+    {
+        return $this->config()->get('defaults.resolver');
+    }
+
+    /**
+     * Get the identity resolver config
+     *
+     * @param string $name
+     *
+     * @return array<string, mixed>
+     */
+    private function getResolverConfig(string $name): array
+    {
+        return $this->config()->get('resolvers.' . $name, []);
+    }
+
+    /**
+     * Get an identity resolver
+     *
+     * @param string|null $name
+     *
+     * @return \Tenanted\Core\Contracts\IdentityResolver
+     *
+     * @throws \Tenanted\Core\Exceptions\IdentityResolverException
+     */
+    public function resolver(?string $name = null): IdentityResolver
+    {
+        $name ??= $this->getDefaultResolverName();
+
+        if (isset($this->resolvers[$name])) {
+            return $this->resolvers[$name];
+        }
+
+        // Set the identity resolver variable and load the tenancy config
+        $resolver = null;
+        $config   = $this->getResolverConfig($name);
+
+        if (self::$customResolverCreators[$name]) {
+            // There's an identity resolver creator for its name, so we'll use
+            // that to create it
+            $resolver = self::$customResolverCreators[$name]($config, $name);
+        } else {
+            // There's no custom identity resolver creator, so we'll check to
+            // make sure the config contains a driver
+            if (! isset($config['driver'])) {
+                throw IdentityResolverException::noDriver($name);
+            }
+
+            // Get the driver
+            $driver = $config['driver'];
+
+            if (isset(self::$customResolverCreators[$driver])) {
+                // There's an identity resolver creator for its driver, so we'll
+                // use that to create it
+                $resolver = self::$customResolverCreators[$driver]($config, $name);
+            } else {
+                // There's no custom identity resolver creator for the driver,
+                // so we'll see if it's a first party identity resolver
+                // supported directly by this class
+                $method = 'create' . Str::ucfirst($driver) . 'Resolver';
+
+                if (method_exists($this, $method)) {
+                    // A method exists to create this type of identity resolver,
+                    // so let's do so
+                    $resolver = $this->$method($config, $name);
+                }
+            }
+        }
+
+        if ($resolver instanceof IdentityResolver) {
+            // An identity resolver was created, so we'll store the instance and return it
+            return $this->resolvers[$name] = $resolver;
+        }
+
+        // We were unable to create an identity resolver, which is a problem
+        throw IdentityResolverException::unknown($name);
+    }
+
+    /**
+     * Create a new instance of the path identity resolver
+     *
+     * @param array  $config
+     * @param string $name
+     *
+     * @return \Tenanted\Core\Resolvers\PathIdentityResolver
+     */
+    public function createPathResolver(array $config, string $name): PathIdentityResolver
+    {
+        return new PathIdentityResolver($name, (int) ($config['segment'] ?? 0));
     }
 }
