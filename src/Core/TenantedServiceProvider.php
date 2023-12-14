@@ -3,10 +3,11 @@ declare(strict_types=1);
 
 namespace Tenanted\Core;
 
+use Illuminate\Events\Dispatcher;
 use Illuminate\Support\ServiceProvider;
-use Tenanted\Core\Contracts\IdentityResolver;
-use Tenanted\Core\Http\Middleware\TenantedRoute;
 use Tenanted\Core\Http\Middleware\SetTenantHeader;
+use Tenanted\Core\Http\Middleware\TenantedRoute;
+use Tenanted\Core\Listeners\RouteMatchedListener;
 
 class TenantedServiceProvider extends ServiceProvider
 {
@@ -19,6 +20,9 @@ class TenantedServiceProvider extends ServiceProvider
     {
         // Publish the config
         $this->publishes([__DIR__ . '/../../config/tenanted.php' => config_path('tenanted.php')]);
+
+        // Register the RouteMatched listener
+        $this->app->get(Dispatcher::class)->subscribe(RouteMatchedListener::class);
     }
 
     /**
