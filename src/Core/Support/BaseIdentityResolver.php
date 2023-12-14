@@ -7,6 +7,7 @@ use Closure;
 use Illuminate\Routing\Router;
 use Illuminate\Routing\RouteRegistrar;
 use Tenanted\Core\Contracts\IdentityResolver;
+use Tenanted\Core\Http\Middleware\TenantedRoute;
 
 /**
  * Base Identity Resolver
@@ -38,7 +39,7 @@ abstract class BaseIdentityResolver implements IdentityResolver
      */
     public function routes(Router $router, string $tenancy, Closure|array|string|null $routes = null): RouteRegistrar
     {
-        $route = $router->middleware(IdentityResolver::TENANTED_MIDDLEWARE . ':' . $tenancy . ',' . $this->name());
+        $route = $router->middleware(TenantedRoute::ALIAS . ':' . $tenancy . ',' . $this->name());
 
         if ($routes) {
             return $route->group($routes);

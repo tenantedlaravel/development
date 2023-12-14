@@ -66,7 +66,7 @@ class TenantedServiceProvider extends ServiceProvider
         $router = $this->app->get('router');
 
         // Create an alias for the identification middleware
-        $router->aliasMiddleware(IdentityResolver::TENANTED_MIDDLEWARE, TenantedRoute::class);
+        $router->aliasMiddleware(TenantedRoute::ALIAS, TenantedRoute::class);
 
         // Create an alias for the header middleware
         $router->aliasMiddleware('tenanted.header', SetTenantHeader::class);

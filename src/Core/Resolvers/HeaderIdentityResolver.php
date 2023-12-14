@@ -9,6 +9,7 @@ use Illuminate\Routing\Router;
 use Illuminate\Routing\RouteRegistrar;
 use Tenanted\Core\Contracts\Tenancy;
 use Tenanted\Core\Contracts\Tenant;
+use Tenanted\Core\Http\Middleware\SetTenantHeader;
 use Tenanted\Core\Support\BaseIdentityResolver;
 
 /**
@@ -78,7 +79,7 @@ class HeaderIdentityResolver extends BaseIdentityResolver
     public function routes(Router $router, string $tenancy, array|Closure|string|null $routes = null): RouteRegistrar
     {
         return parent::routes($router, $tenancy, $routes)
-                     ->middleware('tenanted.header:' . $tenancy . ',' . $this->name());
+                     ->middleware(SetTenantHeader::ALIAS . ':' . $tenancy . ',' . $this->name());
     }
 
     /**

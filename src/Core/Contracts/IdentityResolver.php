@@ -16,7 +16,6 @@ use Tenanted\Core\Support\IdentificationStage;
  */
 interface IdentityResolver
 {
-    public const TENANTED_MIDDLEWARE = 'tenanted.route';
 
     /**
      * Resolve the identifier for a given request, for a given tenancy

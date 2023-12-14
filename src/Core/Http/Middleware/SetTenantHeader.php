@@ -21,6 +21,11 @@ use Tenanted\Core\TenantedManager;
 class SetTenantHeader
 {
     /**
+     * The alias used for this middleware.
+     */
+    public const ALIAS = 'tenanted.header';
+
+    /**
      * @var \Tenanted\Core\TenantedManager
      */
     private TenantedManager $manager;

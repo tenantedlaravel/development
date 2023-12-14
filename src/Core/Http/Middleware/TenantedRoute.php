@@ -18,6 +18,11 @@ use Tenanted\Core\TenantedManager;
 class TenantedRoute
 {
     /**
+     * The alias used for this middleware.
+     */
+    public const ALIAS = 'tenanted.route';
+
+    /**
      * @var \Tenanted\Core\TenantedManager
      */
     private TenantedManager $manager;
