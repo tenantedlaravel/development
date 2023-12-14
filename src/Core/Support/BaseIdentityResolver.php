@@ -38,7 +38,7 @@ abstract class BaseIdentityResolver implements IdentityResolver
      */
     public function routes(Router $router, string $tenancy, Closure|array|string|null $routes = null): RouteRegistrar
     {
-        $route = $router->middleware('tenanted.identify:' . $tenancy . ',' . $this->name());
+        $route = $router->middleware(IdentityResolver::TENANTED_MIDDLEWARE . ':' . $tenancy . ',' . $this->name());
 
         if ($routes) {
             return $route->group($routes);

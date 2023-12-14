@@ -6,6 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Routing\RouteRegistrar;
+use Tenanted\Core\Support\IdentificationStage;
 
 /**
  * Identity Resolver Contract
@@ -15,6 +16,8 @@ use Illuminate\Routing\RouteRegistrar;
  */
 interface IdentityResolver
 {
+    public const TENANTED_MIDDLEWARE = 'tenanted.route';
+
     /**
      * Resolve the identifier for a given request, for a given tenancy
      *

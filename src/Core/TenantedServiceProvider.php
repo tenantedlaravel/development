@@ -4,7 +4,8 @@ declare(strict_types=1);
 namespace Tenanted\Core;
 
 use Illuminate\Support\ServiceProvider;
-use Tenanted\Core\Http\Middleware\IdentifyTenant;
+use Tenanted\Core\Contracts\IdentityResolver;
+use Tenanted\Core\Http\Middleware\TenantedRoute;
 use Tenanted\Core\Http\Middleware\SetTenantHeader;
 
 class TenantedServiceProvider extends ServiceProvider
@@ -65,7 +66,7 @@ class TenantedServiceProvider extends ServiceProvider
         $router = $this->app->get('router');
 
         // Create an alias for the identification middleware
-        $router->aliasMiddleware('tenanted.identify', IdentifyTenant::class);
+        $router->aliasMiddleware(IdentityResolver::TENANTED_MIDDLEWARE, TenantedRoute::class);
 
         // Create an alias for the header middleware
         $router->aliasMiddleware('tenanted.header', SetTenantHeader::class);

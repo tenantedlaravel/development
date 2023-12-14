@@ -10,12 +10,12 @@ use Tenanted\Core\Exceptions\TenantNotFoundException;
 use Tenanted\Core\TenantedManager;
 
 /**
- * Identify Tenant Middleware
+ * Tenanted Route Middleware
  *
- * This middleware sits and acts as a marker for tenant identification, but
- * also functions as a check to make sure that a tenant has been identified.
+ * This middleware sits and acts as a marker for tenant identification, and
+ * makes sure that there is an active tenant.
  */
-class IdentifyTenant
+class TenantedRoute
 {
     /**
      * @var \Tenanted\Core\TenantedManager
