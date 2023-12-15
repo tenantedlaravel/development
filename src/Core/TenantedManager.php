@@ -363,7 +363,7 @@ final class TenantedManager
             } else {
                 // There's no custom tenancy creator for the driver, we'll
                 // create one using the default implementation
-                $tenancy = new Tenancy($name, $this->provider($config['provider'] ?? null));
+                $tenancy = new Tenancy($name, $this->provider($config['provider'] ?? null), $config['options'] ?? []);
             }
         }
 
