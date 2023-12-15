@@ -37,6 +37,7 @@ class TenantedServiceProvider extends ServiceProvider
     {
         $this->registerManager();
         $this->registerMiddleware();
+        $this->registerBindings();
     }
 
     /**
@@ -49,9 +50,11 @@ class TenantedServiceProvider extends ServiceProvider
      */
     private function registerManager(): void
     {
-        $this->app->bind(TenantedManager::class, function () {
-            return new TenantedManager($this->app);
-        },               true);
+        $this->app->bind(
+            TenantedManager::class,
+            fn() => new TenantedManager($this->app),
+            true
+        );
     }
 
     /**
@@ -74,5 +77,37 @@ class TenantedServiceProvider extends ServiceProvider
 
         // Create an alias for the header middleware
         $router->aliasMiddleware(SetTenantHeader::ALIAS, SetTenantHeader::class);
+    }
+
+    /**
+     * Register bindings for the various contracts
+     *
+     * @return void
+     */
+    private function registerBindings(): void
+    {
+        // Bind the tenancy contract to the current tenancy
+        $this->app->bind(
+            Contracts\Tenancy::class,
+            fn(TenantedManager $manager) => $manager->currentTenancy()
+        );
+
+        // Bind the tenant, to the current tenancies tenant
+        $this->app->bind(
+            Contracts\Tenant::class,
+            fn(Contracts\Tenancy $tenancy) => $tenancy->tenant()
+        );
+
+        // Bind the tenancy provider to the current tenancies provider
+        $this->app->bind(
+            Contracts\TenantProvider::class,
+            fn(Contracts\Tenancy $tenancy) => $tenancy->provider()
+        );
+
+        // Bind the tenancy provider to the current tenancies provider
+        $this->app->bind(
+            Contracts\IdentityResolver::class,
+            fn(TenantedManager $manager, Contracts\Tenancy $tenancy) => $manager->resolver($tenancy->identifiedBy())
+        );
     }
 }
