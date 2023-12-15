@@ -115,6 +115,16 @@ interface Tenancy
     public function identifiedBy(): ?string;
 
     /**
+     * Get a tenancy option
+     *
+     * @param string     $name
+     * @param mixed|null $default
+     *
+     * @return mixed
+     */
+    public function option(string $name, mixed $default = null): mixed;
+
+    /**
      * Get the name of this tenancy
      *
      *  Returns the name that this tenancy was registered under.

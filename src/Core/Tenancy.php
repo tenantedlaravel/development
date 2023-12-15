@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Tenanted\Core;
 
+use Illuminate\Support\Arr;
 use Tenanted\Core\Contracts\Tenant;
 use Tenanted\Core\Contracts\TenantProvider;
 use Tenanted\Core\Events\TenantChanged;
@@ -35,13 +36,20 @@ final class Tenancy implements Contracts\Tenancy
     private ?string $identifiedBy;
 
     /**
+     * @var array<string, mixed>
+     */
+    private array $options;
+
+    /**
      * @param string                                  $name
      * @param \Tenanted\Core\Contracts\TenantProvider $provider
+     * @param array<string, mixed>                    $options
      */
-    public function __construct(string $name, TenantProvider $provider)
+    public function __construct(string $name, TenantProvider $provider, array $options = [])
     {
         $this->name     = $name;
         $this->provider = $provider;
+        $this->options  = $options;
     }
 
     /**
@@ -167,6 +175,17 @@ final class Tenancy implements Contracts\Tenancy
     public function identifiedBy(): ?string
     {
         return $this->identifiedBy;
+    }
+
+    /**
+     * @param string     $name
+     * @param mixed|null $default
+     *
+     * @return mixed
+     */
+    public function option(string $name, mixed $default = null): mixed
+    {
+        return Arr::get($this->options, $name, $default);
     }
 
     /**
