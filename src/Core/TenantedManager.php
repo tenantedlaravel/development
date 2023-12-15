@@ -14,7 +14,9 @@ use Tenanted\Core\Exceptions\TenancyException;
 use Tenanted\Core\Exceptions\TenantProviderException;
 use Tenanted\Core\Providers\DatabaseTenantProvider;
 use Tenanted\Core\Providers\EloquentTenantProvider;
+use Tenanted\Core\Resolvers\HeaderIdentityResolver;
 use Tenanted\Core\Resolvers\PathIdentityResolver;
+use Tenanted\Core\Resolvers\SubdomainIdentityResolver;
 use Tenanted\Core\Support\GenericTenant;
 
 /**
@@ -503,9 +505,35 @@ final class TenantedManager
      *
      * @return \Tenanted\Core\Resolvers\PathIdentityResolver
      */
-    public function createPathResolver(array $config, string $name): PathIdentityResolver
+    private function createPathResolver(array $config, string $name): PathIdentityResolver
     {
         return new PathIdentityResolver($name, (int)($config['segment'] ?? 0));
+    }
+
+    /**
+     * Create a new instance of the header identity resolver
+     *
+     * @param array  $config
+     * @param string $name
+     *
+     * @return \Tenanted\Core\Resolvers\HeaderIdentityResolver
+     */
+    private function createHeaderResolver(array $config, string $name): HeaderIdentityResolver
+    {
+        return new HeaderIdentityResolver($name, $config['header']);
+    }
+
+    /**
+     * Create a new instance of the subdomain identity resolver
+     *
+     * @param array  $config
+     * @param string $name
+     *
+     * @return \Tenanted\Core\Resolvers\SubdomainIdentityResolver
+     */
+    private function createSubdomainResolver(array $config, string $name): SubdomainIdentityResolver
+    {
+        return new SubdomainIdentityResolver($name, $config['domain']);
     }
 
     /**
