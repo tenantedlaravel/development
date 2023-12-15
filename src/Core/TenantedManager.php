@@ -5,6 +5,7 @@ namespace Tenanted\Core;
 
 use Illuminate\Config\Repository;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Tenanted\Core\Contracts\IdentityResolver;
 use Tenanted\Core\Contracts\TenantProvider;
@@ -16,6 +17,11 @@ use Tenanted\Core\Providers\EloquentTenantProvider;
 use Tenanted\Core\Resolvers\PathIdentityResolver;
 use Tenanted\Core\Support\GenericTenant;
 
+/**
+ * Tenanted Manager
+ *
+ * The central management class for the tenanted package.
+ */
 final class TenantedManager
 {
     /**
