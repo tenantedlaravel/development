@@ -31,22 +31,16 @@ class RouteMatchedListener
      */
     public function handle(RouteMatched $event): void
     {
-        $route                    = $event->route;
-        $identificationMiddleware = null;
+        $route = $event->route;
 
-        foreach ($route->middleware() as $middleware) {
-            if ($middleware === TenantedRoute::ALIAS || Str::startsWith($middleware, TenantedRoute::ALIAS . ':')) {
-                $identificationMiddleware = $middleware;
-                break;
+        foreach ($route->middleware() as $item) {
+            if ($item === TenantedRoute::ALIAS || Str::startsWith($item, TenantedRoute::ALIAS . ':')) {
+                $options = explode(',', Str::after($item, ':'));
+
+                if (! $this->manager->identify($event->request, $options[0] ?? null, $options[1] ?? null)) {
+                    return;
+                }
             }
         }
-
-        $options = [];
-
-        if (($identificationMiddleware !== null) && Str::contains($identificationMiddleware, ':')) {
-            $options = explode(',', explode(':', $identificationMiddleware)[1]);
-        }
-
-        $this->manager->identify($event->request, $options[0] ?? null, $options[1] ?? null);
     }
 }
