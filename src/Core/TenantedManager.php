@@ -114,6 +114,11 @@ final class TenantedManager
     private array $resolvers = [];
 
     /**
+     * @var \Tenanted\Core\Contracts\Tenancy|null
+     */
+    private ?Contracts\Tenancy $currentTenancy;
+
+    /**
      * Create a new instance of the tenanted manager
      *
      * @param \Illuminate\Contracts\Foundation\Application $app
@@ -374,6 +379,30 @@ final class TenantedManager
 
         // We were unable to create a tenancy, which is a problem
         throw TenancyException::unknown($name);
+    }
+
+    /**
+     * Set the current tenancy
+     *
+     * @param \Tenanted\Core\Contracts\Tenancy|null $tenancy
+     *
+     * @return static
+     */
+    public function setCurrentTenancy(?Contracts\Tenancy $tenancy): self
+    {
+        $this->currentTenancy = $tenancy;
+
+        return $this;
+    }
+
+    /**
+     * Get the current tenancy
+     *
+     * @return \Tenanted\Core\Contracts\Tenancy|null
+     */
+    public function currentTenancy(): ?Contracts\Tenancy
+    {
+        return $this->currentTenancy;
     }
 
     /**
