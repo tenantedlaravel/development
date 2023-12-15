@@ -499,6 +499,39 @@ final class TenantedManager
      */
     public function createPathResolver(array $config, string $name): PathIdentityResolver
     {
-        return new PathIdentityResolver($name, (int) ($config['segment'] ?? 0));
+        return new PathIdentityResolver($name, (int)($config['segment'] ?? 0));
+    }
+
+    /**
+     * Perform tenant identification for the request
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param string|null              $tenancyName
+     * @param string|null              $resolverName
+     *
+     * @return bool
+     *
+     * @throws \Tenanted\Core\Exceptions\IdentityResolverException
+     * @throws \Tenanted\Core\Exceptions\TenancyException
+     * @throws \Tenanted\Core\Exceptions\TenantProviderException
+     */
+    public function identify(Request $request, ?string $tenancyName = null, ?string $resolverName = null): bool
+    {
+        // Grab the tenancy for this identification
+        $tenancy = $this->tenancy($tenancyName);
+
+        // Set the current tenancy
+        $this->setCurrentTenancy($tenancy);
+
+        // Grab the resolver and then resolver the identifier
+        $resolver   = $this->resolver($resolverName);
+        $identifier = $resolver->resolve($request, $tenancy);
+
+        if ($identifier) {
+            // If there's an identifier, we'll perform the identification
+            return $tenancy->identify($identifier, $resolver->name());
+        }
+
+        return false;
     }
 }
