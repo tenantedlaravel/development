@@ -6,18 +6,10 @@ namespace Tenanted\Core;
 use Illuminate\Config\Repository;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
-use Tenanted\Core\Contracts\IdentityResolver;
-use Tenanted\Core\Contracts\TenantProvider;
-use Tenanted\Core\Exceptions\IdentityResolverException;
-use Tenanted\Core\Exceptions\TenancyException;
-use Tenanted\Core\Exceptions\TenantProviderException;
-use Tenanted\Core\Providers\DatabaseTenantProvider;
-use Tenanted\Core\Providers\EloquentTenantProvider;
-use Tenanted\Core\Resolvers\HeaderIdentityResolver;
-use Tenanted\Core\Resolvers\PathIdentityResolver;
-use Tenanted\Core\Resolvers\SubdomainIdentityResolver;
-use Tenanted\Core\Support\GenericTenant;
+use Tenanted\Core\Contracts\Registry;
+use Tenanted\Core\Registries\ProviderRegistry;
+use Tenanted\Core\Registries\ResolverRegistry;
+use Tenanted\Core\Registries\TenancyRegistry;
 
 /**
  * Tenanted Manager
@@ -26,66 +18,6 @@ use Tenanted\Core\Support\GenericTenant;
  */
 final class TenantedManager
 {
-    /**
-     * Custom tenant provider creators
-     *
-     * @var array<string, callable(array<string, mixed>, string): \Tenanted\Core\Contracts\TenantProvider>
-     */
-    private static array $customProviderCreators = [];
-
-    /**
-     * Custom tenancy creators
-     *
-     * @var array<string, callable(array<string, mixed>, string): \Tenanted\Core\Contracts\Tenancy
-     */
-    private static array $customTenancyCreators = [];
-
-    /**
-     * Custom identity resolver creators
-     *
-     * @var array<string, callable(array<string, mixed>, string): \Tenanted\Core\Contracts\IdentityResolver
-     */
-    private static array $customResolverCreators = [];
-
-    /**
-     * Register a custom tenant provider creator
-     *
-     * @param string                                                                          $name
-     * @param callable(array<string, mixed>, string): \Tenanted\Core\Contracts\TenantProvider $creator
-     *
-     * @return void
-     */
-    public static function registerProvider(string $name, callable $creator): void
-    {
-        self::$customProviderCreators[$name] = $creator;
-    }
-
-    /**
-     * Register a custom tenancy creator
-     *
-     * @param string                                                                          $name
-     * @param callable(array<string, mixed>, string): \Tenanted\Core\Contracts\TenantProvider $creator
-     *
-     * @return void
-     */
-    public static function registerTenancy(string $name, callable $creator): void
-    {
-        self::$customTenancyCreators[$name] = $creator;
-    }
-
-    /**
-     * Register a custom identity resolver creator
-     *
-     * @param string                                                                            $name
-     * @param callable(array<string, mixed>, string): \Tenanted\Core\Contracts\IdentityResolver $creator
-     *
-     * @return void
-     */
-    public static function registerResolver(string $name, callable $creator): void
-    {
-        self::$customResolverCreators[$name] = $creator;
-    }
-
     /**
      * The Laravel application
      *
@@ -101,25 +33,19 @@ final class TenantedManager
     private Repository $config;
 
     /**
-     * Tenant provider instances
-     *
-     * @var array<string, \Tenanted\Core\Contracts\TenantProvider>
+     * @var \Tenanted\Core\Contracts\Registry<\Tenanted\Core\Contracts\TenantProvider>
      */
-    private array $providers = [];
+    private Registry $providers;
 
     /**
-     * Tenancy instances
-     *
-     * @var array<string, \Tenanted\Core\Contracts\Tenancy>
+     * @var \Tenanted\Core\Contracts\Registry<\Tenanted\Core\Contracts\Tenancy>
      */
-    private array $tenancies = [];
+    private Registry $tenancies;
 
     /**
-     * Identity resolver instances
-     *
-     * @var array<string, \Tenanted\Core\Contracts\IdentityResolver>
+     * @var \Tenanted\Core\Contracts\Registry<\Tenanted\Core\Contracts\IdentityResolver>
      */
-    private array $resolvers = [];
+    private Registry $resolvers;
 
     /**
      * @var \Tenanted\Core\Contracts\Tenancy|null
@@ -130,10 +56,25 @@ final class TenantedManager
      * Create a new instance of the tenanted manager
      *
      * @param \Illuminate\Contracts\Foundation\Application $app
+     * @param \Tenanted\Core\Contracts\Registry|null       $providers
+     * @param \Tenanted\Core\Contracts\Registry|null       $tenancies
+     * @param \Tenanted\Core\Contracts\Registry|null       $resolvers
      */
-    public function __construct(Application $app)
+    public function __construct(Application $app, Registry $providers = null, Registry $tenancies = null, Registry $resolvers = null)
     {
         $this->app = $app;
+
+        if ($providers !== null) {
+            $this->providers = $providers;
+        }
+
+        if ($tenancies !== null) {
+            $this->tenancies = $tenancies;
+        }
+
+        if ($resolvers !== null) {
+            $this->resolvers = $resolvers;
+        }
     }
 
     /**
@@ -141,7 +82,7 @@ final class TenantedManager
      *
      * @return void
      */
-    public function loadConfig(): void
+    private function loadConfig(): void
     {
         $this->config = new Repository($this->app['config']['tenanted'] ?? []);
     }
@@ -161,232 +102,52 @@ final class TenantedManager
     }
 
     /**
-     * Get the default tenant provider name
-     *
-     * @return string
+     * @return \Tenanted\Core\Contracts\Registry<\Tenanted\Core\Contracts\TenantProvider>
      */
-    private function getDefaultProviderName(): string
+    public function providers(): Registry
     {
-        return $this->config()->get('defaults.provider');
+        if (! isset($this->providers)) {
+            $this->providers = new ProviderRegistry(
+                $this->app,
+                $this->config()->get('providers'),
+                $this->config()->get('defaults.provider')
+            );
+        }
+
+        return $this->providers;
     }
 
     /**
-     * Get the tenant provider config
-     *
-     * @param string $name
-     *
-     * @return array<string, mixed>
+     * @return \Tenanted\Core\Contracts\Registry<\Tenanted\Core\Contracts\Tenancy>
      */
-    private function getProviderConfig(string $name): array
+    public function tenancies(): Registry
     {
-        return $this->config()->get('providers.' . $name, []);
+        if (! isset($this->tenancies)) {
+            $this->tenancies = new TenancyRegistry(
+                $this->app,
+                $this->config()->get('tenancies'),
+                $this->providers(),
+                $this->config()->get('defaults.tenancy')
+            );
+        }
+
+        return $this->tenancies;
     }
 
     /**
-     * Get a tenant provider
-     *
-     * Returns a new or previously created tenant provider based on its name and
-     * driver. If no name is provided, the configured default will be used.
-     *
-     * This method will try to resolve a tenant provider in the following order:
-     *
-     *   - Previously created tenant provider by name
-     *   - Custom tenant provider creator by name
-     *   - Custom tenant provider creator by driver
-     *   - First-party method by driver
-     *
-     * @param string|null $name
-     *
-     * @return \Tenanted\Core\Contracts\TenantProvider
-     *
-     * @throws \Tenanted\Core\Exceptions\TenantProviderException
+     * @return \Tenanted\Core\Contracts\Registry<\Tenanted\Core\Contracts\IdentityResolver>
      */
-    public function provider(?string $name = null): TenantProvider
+    public function resolvers(): Registry
     {
-        // Get the name of the default provider if one wasn't provided
-        $name ??= $this->getDefaultProviderName();
-
-        // If we've already instantiated this provider, let's use that
-        if (isset($this->providers[$name])) {
-            return $this->providers[$name];
+        if (! isset($this->tenancies)) {
+            $this->resolvers = new ResolverRegistry(
+                $this->app,
+                $this->config()->get('tenanted.resolvers'),
+                $this->config()->get('defaults.resolver')
+            );
         }
 
-        // Set the provider variable and load the provider config
-        $provider = null;
-        $config   = $this->getProviderConfig($name);
-
-        if (self::$customProviderCreators[$name]) {
-            // There's a provider creator for its name, so we'll use that to
-            // create it
-            $provider = self::$customProviderCreators[$name]($config, $name);
-        } else {
-            // There's no custom provider creator, so we'll check to make sure
-            // the config contains a driver
-            if (! isset($config['driver'])) {
-                throw TenantProviderException::noDriver($name);
-            }
-
-            // Get the driver
-            $driver = $config['driver'];
-
-            if (isset(self::$customProviderCreators[$driver])) {
-                // There's a provider creator for its driver, so we'll use that
-                // to create it
-                $provider = self::$customProviderCreators[$driver]($config, $name);
-            } else {
-                // There's no custom provider creator for the driver, so we'll
-                // see if it's a first party provider supported directly by
-                // this class
-                $method = 'create' . Str::ucfirst($driver) . 'Provider';
-
-                if (method_exists($this, $method)) {
-                    // A method exists to create this type of provider, so let's do so
-                    $provider = $this->$method($config, $name);
-                }
-            }
-        }
-
-        if ($provider instanceof TenantProvider) {
-            // A provider was created, so we'll store the instance and return it
-            return $this->providers[$name] = $provider;
-        }
-
-        // We were unable to create a tenant provider, which is a problem
-        throw TenantProviderException::unknown($name);
-    }
-
-    /**
-     * Create a new instance of the eloquent tenant provider
-     *
-     * @param array<string, mixed> $config
-     * @param string               $name
-     *
-     * @return \Tenanted\Core\Providers\EloquentTenantProvider
-     *
-     * @throws \Tenanted\Core\Exceptions\TenantProviderException
-     */
-    private function createEloquentProvider(array $config, string $name): EloquentTenantProvider
-    {
-        if (! isset($config['model'])) {
-            throw TenantProviderException::missingConfig($name, 'model');
-        }
-
-        return new EloquentTenantProvider($name, $config['model']);
-    }
-
-    /**
-     * Create a new instance of the database tenant provider
-     *
-     * @param array<string, mixed> $config
-     * @param string               $name
-     *
-     * @return \Tenanted\Core\Providers\DatabaseTenantProvider
-     *
-     * @throws \Tenanted\Core\Exceptions\TenantProviderException
-     */
-    private function createDatabaseProvider(array $config, string $name): DatabaseTenantProvider
-    {
-        if (! isset($config['table'])) {
-            throw TenantProviderException::missingConfig($name, 'table');
-        }
-
-        return new DatabaseTenantProvider(
-            $name,
-            $this->app['db']->connection($config['connection'] ?? null),
-            $config['table'],
-            $config['identifier'] ?? 'identifier',
-            $config['key'] ?? 'id',
-            $config['entity'] ?? GenericTenant::class
-        );
-    }
-
-    /**
-     * Get the default tenant provider name
-     *
-     * @return string
-     */
-    private function getDefaultTenancyName(): string
-    {
-        return $this->config()->get('defaults.tenancy');
-    }
-
-    /**
-     * Get the tenant provider config
-     *
-     * @param string $name
-     *
-     * @return array<string, mixed>
-     */
-    private function getTenancyConfig(string $name): array
-    {
-        return $this->config()->get('tenancies.' . $name, []);
-    }
-
-    /**
-     * Get a tenant provider
-     *
-     * Returns a new or previously created tenant provider based on its name and
-     * driver. If no name is provided, the configured default will be used.
-     *
-     * This method will try to resolve a tenant provider in the following order:
-     *
-     *   - Previously created tenant provider by name
-     *   - Custom tenant provider creator by name
-     *   - Custom tenant provider creator by driver
-     *   - Default implementation
-     *
-     * @param string|null $name
-     *
-     * @return \Tenanted\Core\Contracts\Tenancy
-     *
-     * @throws \Tenanted\Core\Exceptions\TenancyException
-     * @throws \Tenanted\Core\Exceptions\TenantProviderException
-     */
-    public function tenancy(?string $name = null): Contracts\Tenancy
-    {
-        // Get the name of the default tenancy if one wasn't provided
-        $name ??= $this->getDefaultTenancyName();
-
-        // If we've already instantiated this tenancy, let's use that
-        if (isset($this->tenancies[$name])) {
-            return $this->tenancies[$name];
-        }
-
-        // Load the tenancy config
-        $config = $this->getTenancyConfig($name);
-
-        if (self::$customTenancyCreators[$name]) {
-            // There's a tenancy creator for its name, so we'll use that to
-            // create it
-            $tenancy = self::$customTenancyCreators[$name]($config, $name);
-        } else {
-            // There's no custom tenancy creator, so we'll check to make sure
-            // the config contains a driver
-            if (! isset($config['driver'])) {
-                throw TenancyException::noDriver($name);
-            }
-
-            // Get the driver
-            $driver = $config['driver'];
-
-            if (isset(self::$customTenancyCreators[$driver])) {
-                // There's a tenancy creator for its driver, so we'll use that
-                // to create it
-                $tenancy = self::$customTenancyCreators[$driver]($config, $name);
-            } else {
-                // There's no custom tenancy creator for the driver, we'll
-                // create one using the default implementation
-                $tenancy = new Tenancy($name, $this->provider($config['provider'] ?? null), $config['options'] ?? []);
-            }
-        }
-
-        if ($tenancy instanceof Contracts\Tenancy) {
-            // A tenancy was created, so we'll store the instance and return it
-            return $this->tenancies[$name] = $tenancy;
-        }
-
-        // We were unable to create a tenancy, which is a problem
-        throw TenancyException::unknown($name);
+        return $this->resolvers;
     }
 
     /**
@@ -414,129 +175,6 @@ final class TenantedManager
     }
 
     /**
-     * Get the default identity resolver name
-     *
-     * @return string
-     */
-    private function getDefaultResolverName(): string
-    {
-        return $this->config()->get('defaults.resolver');
-    }
-
-    /**
-     * Get the identity resolver config
-     *
-     * @param string $name
-     *
-     * @return array<string, mixed>
-     */
-    private function getResolverConfig(string $name): array
-    {
-        return $this->config()->get('resolvers.' . $name, []);
-    }
-
-    /**
-     * Get an identity resolver
-     *
-     * @param string|null $name
-     *
-     * @return \Tenanted\Core\Contracts\IdentityResolver
-     *
-     * @throws \Tenanted\Core\Exceptions\IdentityResolverException
-     */
-    public function resolver(?string $name = null): IdentityResolver
-    {
-        $name ??= $this->getDefaultResolverName();
-
-        if (isset($this->resolvers[$name])) {
-            return $this->resolvers[$name];
-        }
-
-        // Set the identity resolver variable and load the tenancy config
-        $resolver = null;
-        $config   = $this->getResolverConfig($name);
-
-        if (self::$customResolverCreators[$name]) {
-            // There's an identity resolver creator for its name, so we'll use
-            // that to create it
-            $resolver = self::$customResolverCreators[$name]($config, $name);
-        } else {
-            // There's no custom identity resolver creator, so we'll check to
-            // make sure the config contains a driver
-            if (! isset($config['driver'])) {
-                throw IdentityResolverException::noDriver($name);
-            }
-
-            // Get the driver
-            $driver = $config['driver'];
-
-            if (isset(self::$customResolverCreators[$driver])) {
-                // There's an identity resolver creator for its driver, so we'll
-                // use that to create it
-                $resolver = self::$customResolverCreators[$driver]($config, $name);
-            } else {
-                // There's no custom identity resolver creator for the driver,
-                // so we'll see if it's a first party identity resolver
-                // supported directly by this class
-                $method = 'create' . Str::ucfirst($driver) . 'Resolver';
-
-                if (method_exists($this, $method)) {
-                    // A method exists to create this type of identity resolver,
-                    // so let's do so
-                    $resolver = $this->$method($config, $name);
-                }
-            }
-        }
-
-        if ($resolver instanceof IdentityResolver) {
-            // An identity resolver was created, so we'll store the instance and return it
-            return $this->resolvers[$name] = $resolver;
-        }
-
-        // We were unable to create an identity resolver, which is a problem
-        throw IdentityResolverException::unknown($name);
-    }
-
-    /**
-     * Create a new instance of the path identity resolver
-     *
-     * @param array  $config
-     * @param string $name
-     *
-     * @return \Tenanted\Core\Resolvers\PathIdentityResolver
-     */
-    private function createPathResolver(array $config, string $name): PathIdentityResolver
-    {
-        return new PathIdentityResolver($name, (int)($config['segment'] ?? 0));
-    }
-
-    /**
-     * Create a new instance of the header identity resolver
-     *
-     * @param array  $config
-     * @param string $name
-     *
-     * @return \Tenanted\Core\Resolvers\HeaderIdentityResolver
-     */
-    private function createHeaderResolver(array $config, string $name): HeaderIdentityResolver
-    {
-        return new HeaderIdentityResolver($name, $config['header']);
-    }
-
-    /**
-     * Create a new instance of the subdomain identity resolver
-     *
-     * @param array  $config
-     * @param string $name
-     *
-     * @return \Tenanted\Core\Resolvers\SubdomainIdentityResolver
-     */
-    private function createSubdomainResolver(array $config, string $name): SubdomainIdentityResolver
-    {
-        return new SubdomainIdentityResolver($name, $config['domain']);
-    }
-
-    /**
      * Perform tenant identification for the request
      *
      * @param \Illuminate\Http\Request $request
@@ -546,19 +184,17 @@ final class TenantedManager
      * @return bool
      *
      * @throws \Tenanted\Core\Exceptions\IdentityResolverException
-     * @throws \Tenanted\Core\Exceptions\TenancyException
-     * @throws \Tenanted\Core\Exceptions\TenantProviderException
      */
     public function identify(Request $request, ?string $tenancyName = null, ?string $resolverName = null): bool
     {
         // Grab the tenancy for this identification
-        $tenancy = $this->tenancy($tenancyName);
+        $tenancy = $this->tenancies()->get($tenancyName);
 
         // Set the current tenancy
         $this->setCurrentTenancy($tenancy);
 
         // Grab the resolver and then resolver the identifier
-        $resolver   = $this->resolver($resolverName);
+        $resolver   = $this->resolvers()->get($resolverName);
         $identifier = $resolver->resolve($request, $tenancy);
 
         if ($identifier) {

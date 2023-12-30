@@ -107,7 +107,7 @@ class TenantedServiceProvider extends ServiceProvider
         // Bind the tenancy provider to the current tenancies provider
         $this->app->bind(
             Contracts\IdentityResolver::class,
-            fn(TenantedManager $manager, Contracts\Tenancy $tenancy) => $manager->resolver($tenancy->identifiedBy())
+            fn(TenantedManager $manager, Contracts\Tenancy $tenancy) => $manager->resolvers()->get($tenancy->identifiedBy())
         );
     }
 }

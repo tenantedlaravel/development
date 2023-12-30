@@ -49,8 +49,8 @@ class TenantedRoute
      */
     public function handle(Request $request, Closure $next, ?string $tenancyName = null, ?string $resolverName = null): Response
     {
-        $tenancy  = $this->manager->tenancy($tenancyName);
-        $resolver = $this->manager->resolver($resolverName);
+        $tenancy  = $this->manager->tenancies()->get($tenancyName);
+        $resolver = $this->manager->resolvers()->get($resolverName);
 
         // If there's no tenant, it's exception time
         if (! $tenancy->check()) {

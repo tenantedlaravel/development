@@ -51,10 +51,10 @@ class SetTenantHeader
      */
     public function handle(Request $request, Closure $next, ?string $tenancyName = null, ?string $resolverName = null): Response
     {
-        $tenancy = $this->manager->tenancy($tenancyName);
+        $tenancy = $this->manager->tenancies()->get($tenancyName);
 
         if ($tenancy->check() && $tenancy->wasIdentified() && $tenancy->identifiedBy() !== $resolverName) {
-            $resolver = $this->manager->resolver($resolverName);
+            $resolver = $this->manager->resolvers()->get($resolverName);
 
             if (! ($resolver instanceof HeaderIdentityResolver)) {
                 throw new IdentityResolverException('Current resolver \'' . $resolver->name() . '\' is not an instance of \'' . HeaderIdentityResolver::class . '\'');
