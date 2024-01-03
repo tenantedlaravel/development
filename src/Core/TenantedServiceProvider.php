@@ -1,9 +1,11 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Tenanted\Core;
 
 use Illuminate\Events\Dispatcher;
+use Illuminate\Routing\Events\RouteMatched;
 use Illuminate\Support\ServiceProvider;
 use Tenanted\Core\Http\Middleware\SetTenantHeader;
 use Tenanted\Core\Http\Middleware\TenantedRoute;
@@ -15,6 +17,9 @@ class TenantedServiceProvider extends ServiceProvider
      * Boots the tenanted package
      *
      * @return void
+     *
+     * @throws \Psr\Container\ContainerExceptionInterface
+     * @throws \Psr\Container\NotFoundExceptionInterface
      */
     public function boot(): void
     {
@@ -22,7 +27,8 @@ class TenantedServiceProvider extends ServiceProvider
         $this->publishes([__DIR__ . '/../../config/tenanted.php' => config_path('tenanted.php')]);
 
         // Register the RouteMatched listener
-        $this->app->get(Dispatcher::class)->subscribe(RouteMatchedListener::class);
+        /* @phpstan-ignore-next-line */
+        $this->app->get(Dispatcher::class)->listen(RouteMatched::class, RouteMatchedListener::class);
     }
 
     /**
@@ -52,7 +58,7 @@ class TenantedServiceProvider extends ServiceProvider
     {
         $this->app->bind(
             TenantedManager::class,
-            fn() => new TenantedManager($this->app),
+            fn () => new TenantedManager($this->app),
             true
         );
     }
@@ -89,25 +95,25 @@ class TenantedServiceProvider extends ServiceProvider
         // Bind the tenancy contract to the current tenancy
         $this->app->bind(
             Contracts\Tenancy::class,
-            fn(TenantedManager $manager) => $manager->currentTenancy()
+            fn (TenantedManager $manager) => $manager->currentTenancy()
         );
 
         // Bind the tenant, to the current tenancies tenant
         $this->app->bind(
             Contracts\Tenant::class,
-            fn(Contracts\Tenancy $tenancy) => $tenancy->tenant()
+            fn (Contracts\Tenancy $tenancy) => $tenancy->tenant()
         );
 
         // Bind the tenancy provider to the current tenancies provider
         $this->app->bind(
             Contracts\TenantProvider::class,
-            fn(Contracts\Tenancy $tenancy) => $tenancy->provider()
+            fn (Contracts\Tenancy $tenancy) => $tenancy->provider()
         );
 
         // Bind the tenancy provider to the current tenancies provider
         $this->app->bind(
             Contracts\IdentityResolver::class,
-            fn(TenantedManager $manager, Contracts\Tenancy $tenancy) => $manager->resolvers()->get($tenancy->identifiedBy())
+            fn (TenantedManager $manager, Contracts\Tenancy $tenancy) => $manager->resolvers()->get($tenancy->identifiedBy())
         );
     }
 }

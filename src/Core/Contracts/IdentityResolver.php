@@ -1,12 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tenanted\Core\Contracts;
 
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Routing\RouteRegistrar;
-use Tenanted\Core\Support\IdentificationStage;
 
 /**
  * Identity Resolver Contract
@@ -16,7 +17,6 @@ use Tenanted\Core\Support\IdentificationStage;
  */
 interface IdentityResolver
 {
-
     /**
      * Resolve the identifier for a given request, for a given tenancy
      *
@@ -32,9 +32,9 @@ interface IdentityResolver
     /**
      * Register routes to use this identity resolver
      *
-     * @param \Illuminate\Routing\Router $router
-     * @param string                     $tenancy
-     * @param \Closure|array|string|null $routes
+     * @param \Illuminate\Routing\Router               $router
+     * @param string                                   $tenancy
+     * @param \Closure|\Closure[]|string|string[]|null $routes
      *
      * @return RouteRegistrar
      */

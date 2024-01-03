@@ -1,9 +1,11 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Tenanted\Core\Listeners;
 
 use Illuminate\Routing\Events\RouteMatched;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Tenanted\Core\Http\Middleware\TenantedRoute;
 use Tenanted\Core\TenantedManager;
@@ -26,14 +28,12 @@ class RouteMatchedListener
      * @return void
      *
      * @throws \Tenanted\Core\Exceptions\IdentityResolverException
-     * @throws \Tenanted\Core\Exceptions\TenancyException
-     * @throws \Tenanted\Core\Exceptions\TenantProviderException
      */
     public function handle(RouteMatched $event): void
     {
         $route = $event->route;
 
-        foreach ($route->middleware() as $item) {
+        foreach (Arr::wrap($route->middleware()) as $item) {
             if ($item === TenantedRoute::ALIAS || Str::startsWith($item, TenantedRoute::ALIAS . ':')) {
                 $options = explode(',', Str::after($item, ':'));
 

@@ -1,11 +1,12 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Tenanted\Core\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
+use Symfony\Component\HttpFoundation\Response;
 use Tenanted\Core\Exceptions\IdentityResolverException;
 use Tenanted\Core\Resolvers\HeaderIdentityResolver;
 use Tenanted\Core\TenantedManager;
@@ -43,10 +44,8 @@ class SetTenantHeader
      * @param string|null                                                                      $tenancyName
      * @param string|null                                                                      $resolverName
      *
-     * @return \Illuminate\Http\Response
+     * @return \Symfony\Component\HttpFoundation\Response
      *
-     * @throws \Tenanted\Core\Exceptions\TenancyException
-     * @throws \Tenanted\Core\Exceptions\TenantProviderException
      * @throws \Tenanted\Core\Exceptions\IdentityResolverException
      */
     public function handle(Request $request, Closure $next, ?string $tenancyName = null, ?string $resolverName = null): Response

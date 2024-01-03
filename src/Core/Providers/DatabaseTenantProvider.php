@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Tenanted\Core\Providers;
@@ -42,12 +43,12 @@ class DatabaseTenantProvider extends BaseTenantProvider
     private string $entity;
 
     /**
-     * @param string                                   $name
-     * @param \Illuminate\Database\ConnectionInterface $connection
-     * @param string                                   $table
-     * @param string                                   $key
-     * @param string                                   $identifier
-     * @param string                                   $entity
+     * @param string                                        $name
+     * @param \Illuminate\Database\ConnectionInterface      $connection
+     * @param string                                        $table
+     * @param string                                        $key
+     * @param string                                        $identifier
+     * @param class-string<\Tenanted\Core\Contracts\Tenant> $entity
      */
     public function __construct(string $name, ConnectionInterface $connection, string $table, string $key = 'id', string $identifier = 'identifier', string $entity = GenericTenant::class)
     {
@@ -60,7 +61,7 @@ class DatabaseTenantProvider extends BaseTenantProvider
     }
 
     /**
-     * @param array $attributes
+     * @param array<string, mixed> $attributes
      *
      * @return \Tenanted\Core\Contracts\Tenant
      */
@@ -77,8 +78,8 @@ class DatabaseTenantProvider extends BaseTenantProvider
     public function retrieveByIdentifier(string $identifier): ?Tenant
     {
         $attributes = $this->connection->table($this->table)
-                                       ->where($this->identifier, '=', $identifier)
-                                       ->first();
+            ->where($this->identifier, '=', $identifier)
+            ->first();
 
         if ($attributes !== null) {
             return $this->makeEntity((array) $attributes);
@@ -95,8 +96,8 @@ class DatabaseTenantProvider extends BaseTenantProvider
     public function retrieveByKey(int|string $key): ?Tenant
     {
         $attributes = $this->connection->table($this->table)
-                                       ->where($this->key, '=', $key)
-                                       ->first();
+            ->where($this->key, '=', $key)
+            ->first();
 
         if ($attributes !== null) {
             return $this->makeEntity((array) $attributes);

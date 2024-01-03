@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Tenanted\Core\Resolvers;
@@ -33,6 +34,8 @@ class SubdomainIdentityResolver extends ParameterIdentityResolver
      * @param callable(string, string): bool $predicate
      *
      * @return void
+     *
+     * @noinspection PhpUnused
      */
     public static function excludeCallback(callable $predicate): void
     {
@@ -101,20 +104,23 @@ class SubdomainIdentityResolver extends ParameterIdentityResolver
     }
 
     /**
-     * @param \Illuminate\Routing\Router $router
-     * @param string                     $tenancy
-     * @param array|\Closure|string|null $routes
+     * @param \Illuminate\Routing\Router               $router
+     * @param string                                   $tenancy
+     * @param \Closure|\Closure[]|string|string[]|null $routes
      *
      * @return \Illuminate\Routing\RouteRegistrar
      */
     public function routes(Router $router, string $tenancy, array|Closure|string|null $routes = null): RouteRegistrar
     {
         return parent::routes($router, $tenancy)
-                     ->domain('{' . $this->getParameterName($tenancy) . '}.' . $this->domain())
-                     ->group(function (Router $router) use ($routes) {
-                         $router->group([], $routes);
-                         $router->fallback(FallbackHandler::class);
-                     })
-                     ->where([$this->getParameterName($tenancy) => '.*',]);
+            ->domain('{' . $this->getParameterName($tenancy) . '}.' . $this->domain())
+            ->group(function (Router $router) use ($routes) {
+                if ($routes !== null) {
+                    $router->group([], $routes);
+                }
+
+                $router->fallback(FallbackHandler::class);
+            })
+            ->where([$this->getParameterName($tenancy) => '.*']);
     }
 }

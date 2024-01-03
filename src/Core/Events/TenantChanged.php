@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Tenanted\Core\Events;
@@ -8,6 +9,10 @@ use Tenanted\Core\Contracts\Tenancy;
 use Tenanted\Core\Contracts\Tenant;
 
 /**
+ * Tenant Changed Event
+ *
+ * This event is used when the current tenant changes.
+ *
  * @method static array dispatch(Tenancy $tenancy, ?Tenant $current, ?Tenant $new)
  * @method static array dispatchIf(bool $boolean, Tenancy $tenancy, ?Tenant $current, ?Tenant $new)
  * @method static array dispatchUnless(bool $boolean, Tenancy $tenancy, ?Tenant $current, ?Tenant $new)
@@ -29,7 +34,7 @@ final class TenantChanged
     /**
      * @var \Tenanted\Core\Contracts\Tenant|null
      */
-    private ?Tenant                          $new;
+    private ?Tenant $new;
 
     public function __construct(Tenancy $tenancy, ?Tenant $current, ?Tenant $new)
     {

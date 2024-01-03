@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Tenanted\Core\Support;
@@ -17,15 +18,19 @@ abstract class BaseRegistry implements Registry
     /**
      * Custom creators
      *
-     * @var array<string, callable(array<string, mixed>, string): MClass
+     * @var array<string, callable(array<string, mixed>, string): object>
      */
     protected static array $customCreators = [];
 
     /**
-     * @param string                                         $name
-     * @param callable(array<string, mixed>, string): MClass $creator
+     * @template SMClass of MClass
+     *
+     * @param string                                          $name
+     * @param callable(array<string, mixed>, string): SMClass $creator
      *
      * @return void
+     *
+     * @psalm-suppress MoreSpecificImplementedParamType
      */
     public static function register(string $name, callable $creator): void
     {
@@ -33,7 +38,6 @@ abstract class BaseRegistry implements Registry
     }
 
     /**
-     *
      * @var \Illuminate\Contracts\Foundation\Application
      */
     protected readonly Application $app;

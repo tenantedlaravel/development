@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Tenanted\Core;
@@ -10,9 +11,6 @@ use Tenanted\Core\Events\TenantChanged;
 use Tenanted\Core\Events\TenantIdentified;
 use Tenanted\Core\Events\TenantLoaded;
 
-/**
- *
- */
 final class Tenancy implements Contracts\Tenancy
 {
     /**
@@ -107,6 +105,7 @@ final class Tenancy implements Contracts\Tenancy
 
             if ($this->setTenant($tenant)) {
                 $this->identifiedBy = $resolver;
+
                 return true;
             }
         }
@@ -128,6 +127,7 @@ final class Tenancy implements Contracts\Tenancy
 
             if ($this->setTenant($tenant)) {
                 $this->identifiedBy = null;
+
                 return true;
             }
         }

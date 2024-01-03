@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Tenanted\Core;
@@ -55,12 +56,12 @@ final class TenantedManager
     /**
      * Create a new instance of the tenanted manager
      *
-     * @param \Illuminate\Contracts\Foundation\Application $app
-     * @param \Tenanted\Core\Contracts\Registry|null       $providers
-     * @param \Tenanted\Core\Contracts\Registry|null       $tenancies
-     * @param \Tenanted\Core\Contracts\Registry|null       $resolvers
+     * @param \Illuminate\Contracts\Foundation\Application                                      $app
+     * @param \Tenanted\Core\Contracts\Registry<\Tenanted\Core\Contracts\TenantProvider>|null   $providers
+     * @param \Tenanted\Core\Contracts\Registry<\Tenanted\Core\Contracts\Tenancy>|null          $tenancies
+     * @param \Tenanted\Core\Contracts\Registry<\Tenanted\Core\Contracts\IdentityResolver>|null $resolvers
      */
-    public function __construct(Application $app, Registry $providers = null, Registry $tenancies = null, Registry $resolvers = null)
+    public function __construct(Application $app, ?Registry $providers = null, ?Registry $tenancies = null, ?Registry $resolvers = null)
     {
         $this->app = $app;
 
@@ -81,16 +82,23 @@ final class TenantedManager
      * Load the tenanted config
      *
      * @return void
+     *
+     * @throws \Psr\Container\ContainerExceptionInterface
+     * @throws \Psr\Container\NotFoundExceptionInterface
      */
     private function loadConfig(): void
     {
-        $this->config = new Repository($this->app['config']['tenanted'] ?? []);
+        /* @phpstan-ignore-next-line */
+        $this->config = new Repository($this->app->make('config')->get('tenanted', []));
     }
 
     /**
      * Get the tenanted package config
      *
      * @return \Illuminate\Config\Repository
+     *
+     * @throws \Psr\Container\ContainerExceptionInterface
+     * @throws \Psr\Container\NotFoundExceptionInterface
      */
     private function config(): Repository
     {
@@ -103,14 +111,17 @@ final class TenantedManager
 
     /**
      * @return \Tenanted\Core\Contracts\Registry<\Tenanted\Core\Contracts\TenantProvider>
+     *
+     * @throws \Psr\Container\ContainerExceptionInterface
+     * @throws \Psr\Container\NotFoundExceptionInterface
      */
     public function providers(): Registry
     {
         if (! isset($this->providers)) {
             $this->providers = new ProviderRegistry(
                 $this->app,
-                $this->config()->get('providers'),
-                $this->config()->get('defaults.provider')
+                new Repository($this->config()->get('providers')),
+                $this->config()->get('defaults.provider')/* @phpstan-ignore-line */
             );
         }
 
@@ -119,15 +130,18 @@ final class TenantedManager
 
     /**
      * @return \Tenanted\Core\Contracts\Registry<\Tenanted\Core\Contracts\Tenancy>
+     *
+     * @throws \Psr\Container\ContainerExceptionInterface
+     * @throws \Psr\Container\NotFoundExceptionInterface
      */
     public function tenancies(): Registry
     {
         if (! isset($this->tenancies)) {
             $this->tenancies = new TenancyRegistry(
                 $this->app,
-                $this->config()->get('tenancies'),
+                new Repository($this->config()->get('tenancies')),
                 $this->providers(),
-                $this->config()->get('defaults.tenancy')
+                $this->config()->get('defaults.tenancy')/* @phpstan-ignore-line */
             );
         }
 
@@ -136,14 +150,17 @@ final class TenantedManager
 
     /**
      * @return \Tenanted\Core\Contracts\Registry<\Tenanted\Core\Contracts\IdentityResolver>
+     *
+     * @throws \Psr\Container\ContainerExceptionInterface
+     * @throws \Psr\Container\NotFoundExceptionInterface
      */
     public function resolvers(): Registry
     {
         if (! isset($this->tenancies)) {
             $this->resolvers = new ResolverRegistry(
                 $this->app,
-                $this->config()->get('tenanted.resolvers'),
-                $this->config()->get('defaults.resolver')
+                new Repository($this->config()->get('resolvers')),
+                $this->config()->get('defaults.resolver') /* @phpstan-ignore-line */
             );
         }
 
@@ -183,6 +200,8 @@ final class TenantedManager
      *
      * @return bool
      *
+     * @throws \Psr\Container\ContainerExceptionInterface
+     * @throws \Psr\Container\NotFoundExceptionInterface
      * @throws \Tenanted\Core\Exceptions\IdentityResolverException
      */
     public function identify(Request $request, ?string $tenancyName = null, ?string $resolverName = null): bool

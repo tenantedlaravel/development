@@ -1,0 +1,10 @@
+includes:
+  - phpstan-baseline.neon
+
+parameters:
+  level: max
+  paths:
+    - src
+  ignoreErrors:
+    - '#^Parameter \#1 \$items of class Illuminate\\Config\\Repository constructor expects array, mixed given\.$#'
+    - '#^Method Tenanted\\Core\\Providers\\EloquentTenantProvider\:\:retrieveBy(Identifier|Key)\(\) should return \(Illuminate\\Database\\Eloquent\\Model&Tenanted\\Core\\Contracts\\Tenant\)\|null but returns object\|null\.$#'

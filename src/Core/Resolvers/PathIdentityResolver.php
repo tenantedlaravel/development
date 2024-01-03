@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Tenanted\Core\Resolvers;
@@ -27,8 +28,8 @@ class PathIdentityResolver extends ParameterIdentityResolver
     private int $segment;
 
     /**
-     * @param string $name
-     * @param int    $segment
+     * @param string      $name
+     * @param int<0, max> $segment
      */
     public function __construct(string $name, int $segment = 0)
     {
@@ -55,19 +56,22 @@ class PathIdentityResolver extends ParameterIdentityResolver
     }
 
     /**
-     * @param \Illuminate\Routing\Router $router
-     * @param string                     $tenancy
-     * @param array|\Closure|string|null $routes
+     * @param \Illuminate\Routing\Router               $router
+     * @param string                                   $tenancy
+     * @param \Closure|\Closure[]|string|string[]|null $routes
      *
      * @return \Illuminate\Routing\RouteRegistrar
      */
     public function routes(Router $router, string $tenancy, array|Closure|string|null $routes = null): RouteRegistrar
     {
         return parent::routes($router, $tenancy)
-                     ->prefix('{' . $this->getParameterName($tenancy) . '}')
-                     ->group(function (Router $router) use($routes) {
-                         $router->group([], $routes);
-                         $router->fallback(FallbackHandler::class);
-                     });
+            ->prefix('{' . $this->getParameterName($tenancy) . '}')
+            ->group(function (Router $router) use ($routes) {
+                if ($routes !== null) {
+                    $router->group([], $routes);
+                }
+
+                $router->fallback(FallbackHandler::class);
+            });
     }
 }

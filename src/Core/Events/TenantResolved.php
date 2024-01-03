@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Tenanted\Core\Events;
@@ -8,6 +9,13 @@ use Tenanted\Core\Contracts\Tenancy;
 use Tenanted\Core\Contracts\Tenant;
 
 /**
+ * Tenant Resolved Event
+ *
+ * This is a base event class used when tenants are loaded or identified.
+ *
+ * @psalm-suppress MoreSpecificImplementedParamType
+ * @psalm-suppress MethodSignatureMismatch
+ *
  * @method static array dispatch(Tenant $tenant, Tenancy $tenancy)
  * @method static array dispatchIf(bool $boolean, Tenant $tenant, Tenancy $tenancy)
  * @method static array dispatchUnless(bool $boolean, Tenant $tenant, Tenancy $tenancy)

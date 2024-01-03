@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tenanted\Core\Contracts;
 
 /**
@@ -108,7 +110,7 @@ interface Tenancy
     public function wasIdentified(): bool;
 
     /**
-     * Get the name of the identity resolver use to identify the current tenant
+     * Get the name of the identity resolver used to identify the current tenant
      *
      * @return string|null
      */

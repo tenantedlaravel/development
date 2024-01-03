@@ -7,9 +7,11 @@
     "laravel/framework": "^10.0"
   },
   "require-dev"      : {
-    "orchestra/testbench" : "^8.5",
-    "nunomaduro/larastan" : "^2.0",
-    "psalm/plugin-laravel": "^2.8"
+    "orchestra/testbench"    : "^8.5",
+    "psalm/plugin-laravel"   : "^2.8",
+    "larastan/larastan"      : "^2.7",
+    "laravel/pint"           : "^1.13",
+    "phpstan/phpstan-phpunit": "^1.3"
   },
   "license"          : "MIT",
   "autoload"         : {

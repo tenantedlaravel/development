@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Tenanted\Core\Support;
@@ -43,13 +44,22 @@ abstract class ParameterIdentityResolver extends BaseIdentityResolver
 
         $parameter = $this->getParameterName($tenancy->name());
 
-        if (! $request->route()->hasParameter($parameter)) {
+        /**
+         * @var \Illuminate\Routing\Route $route
+         */
+        $route = $request->route();
+
+        if (! $route->hasParameter($parameter)) {
             return false;
         }
 
-        $identifier = $request->route()->parameter($parameter);
+        $identifier = $route->parameter($parameter);
 
-        $request->route()->forgetParameter($parameter);
+        $route->forgetParameter($parameter);
+
+        if (! is_string($identifier) && $identifier !== null) {
+            return false;
+        }
 
         return $identifier;
     }
@@ -62,6 +72,10 @@ abstract class ParameterIdentityResolver extends BaseIdentityResolver
      */
     public function setup(Tenancy $tenancy, ?Tenant $tenant = null): void
     {
-        app(UrlGenerator::class)->defaults([$this->getParameterName($tenancy->name()) => $tenant?->getTenantIdentifier(),]);
+        /**
+         * @phpstan-ignore-next-line
+         * @psalm-suppress PossiblyUndefinedMethod
+         */
+        app(UrlGenerator::class)->defaults([$this->getParameterName($tenancy->name()) => $tenant?->getTenantIdentifier()]);
     }
 }

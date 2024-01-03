@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tenanted\Core\Contracts;
 
 /**
@@ -15,7 +17,7 @@ interface Tenant
      * Get the unique tenant identifier
      *
      * Returns a unique string used to identify the tenant externally. This value
-     * must be unique, and safe to share publicly.
+     * must be unique and safe to share publicly.
      *
      * @return string
      */

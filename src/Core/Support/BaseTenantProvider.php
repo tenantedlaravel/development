@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Tenanted\Core\Support;
@@ -30,7 +31,6 @@ abstract class BaseTenantProvider implements TenantProvider
     }
 
     /**
-     *
      * Get the name of the tenant provider
      *
      * @return string

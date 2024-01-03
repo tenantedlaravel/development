@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Tenanted\Core\Resolvers;
@@ -70,16 +71,16 @@ class HeaderIdentityResolver extends BaseIdentityResolver
     }
 
     /**
-     * @param \Illuminate\Routing\Router $router
-     * @param string                     $tenancy
-     * @param array|\Closure|string|null $routes
+     * @param \Illuminate\Routing\Router               $router
+     * @param string                                   $tenancy
+     * @param \Closure|\Closure[]|string|string[]|null $routes
      *
      * @return \Illuminate\Routing\RouteRegistrar
      */
     public function routes(Router $router, string $tenancy, array|Closure|string|null $routes = null): RouteRegistrar
     {
         return parent::routes($router, $tenancy, $routes)
-                     ->middleware(SetTenantHeader::ALIAS . ':' . $tenancy . ',' . $this->name());
+            ->middleware(SetTenantHeader::ALIAS . ':' . $tenancy . ',' . $this->name());
     }
 
     /**

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Tenanted\Core\Registries;
@@ -17,16 +18,22 @@ use Tenanted\Core\Tenancy;
 class TenancyRegistry extends BaseRegistry
 {
     /**
-     * @var string|null
+     * @var string
      */
-    private ?string $default;
+    private string $default;
 
     /**
      * @var \Tenanted\Core\Contracts\Registry<\Tenanted\Core\Contracts\TenantProvider>
      */
     private Registry $providers;
 
-    public function __construct(Application $app, Repository $config, Registry $providers, ?string $default = null)
+    /**
+     * @param \Illuminate\Contracts\Foundation\Application                               $app
+     * @param \Illuminate\Contracts\Config\Repository                                    $config
+     * @param \Tenanted\Core\Contracts\Registry<\Tenanted\Core\Contracts\TenantProvider> $providers
+     * @param string                                                                     $default
+     */
+    public function __construct(Application $app, Repository $config, Registry $providers, string $default)
     {
         parent::__construct($app, $config);
 
@@ -53,6 +60,7 @@ class TenancyRegistry extends BaseRegistry
      */
     private function getTenancyConfig(string $name): array
     {
+        /* @phpstan-ignore-next-line */
         return $this->config->get($name, []);
     }
 
@@ -89,7 +97,7 @@ class TenancyRegistry extends BaseRegistry
         // Load the tenancy config
         $config = $this->getTenancyConfig($name);
 
-        if (self::$customCreators[$name]) {
+        if (isset(self::$customCreators[$name])) {
             // There's a tenancy creator for its name, so we'll use that to
             // create it
             $tenancy = self::$customCreators[$name]($config, $name);
@@ -112,8 +120,8 @@ class TenancyRegistry extends BaseRegistry
                 // create one using the default implementation
                 $tenancy = new Tenancy(
                     $name,
-                    $this->providers->get($config['provider'] ?? null),
-                    $config['options'] ?? []
+                    $this->providers->get($config['provider'] ?? null), /* @phpstan-ignore-line */
+                    $config['options'] ?? []/* @phpstan-ignore-line */
                 );
             }
         }

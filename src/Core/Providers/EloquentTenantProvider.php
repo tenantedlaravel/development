@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Tenanted\Core\Providers;
@@ -61,6 +62,8 @@ class EloquentTenantProvider extends BaseTenantProvider
      * @param string $identifier
      *
      * @return (\Illuminate\Database\Eloquent\Model&\Tenanted\Core\Contracts\Tenant)|null
+     *
+     * @psalm-suppress MoreSpecificReturnType
      */
     public function retrieveByIdentifier(string $identifier): ?Tenant
     {
@@ -72,16 +75,20 @@ class EloquentTenantProvider extends BaseTenantProvider
          *
          * @noinspection PhpIncompatibleReturnTypeInspection
          * @noinspection UnknownInspectionInspection
+         *
+         * @psalm-suppress LessSpecificReturnStatement
          */
         return $model->newQuery()
-                     ->where($model->getTenantIdentifierName(), '=', $identifier)
-                     ->first();
+            ->where($model->getTenantIdentifierName(), '=', $identifier)
+            ->first();
     }
 
     /**
      * @param int|string $key
      *
      * @return (\Illuminate\Database\Eloquent\Model&\Tenanted\Core\Contracts\Tenant)|null
+     *
+     * @psalm-suppress MoreSpecificReturnType
      */
     public function retrieveByKey(int|string $key): ?Tenant
     {
@@ -93,9 +100,11 @@ class EloquentTenantProvider extends BaseTenantProvider
          *
          * @noinspection PhpIncompatibleReturnTypeInspection
          * @noinspection UnknownInspectionInspection
+         *
+         * @psalm-suppress LessSpecificReturnStatement
          */
         return $model->newQuery()
-                     ->where($model->getTenantKeyName(), '=', $key)
-                     ->first();
+            ->where($model->getTenantKeyName(), '=', $key)
+            ->first();
     }
 }

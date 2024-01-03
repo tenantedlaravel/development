@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Tenanted\Core\Support;
@@ -31,9 +32,9 @@ abstract class BaseIdentityResolver implements IdentityResolver
     }
 
     /**
-     * @param \Illuminate\Routing\Router $router
-     * @param string                     $tenancy
-     * @param \Closure|array|string|null $routes
+     * @param \Illuminate\Routing\Router               $router
+     * @param string                                   $tenancy
+     * @param \Closure|\Closure[]|string|string[]|null $routes
      *
      * @return \Illuminate\Routing\RouteRegistrar
      */
